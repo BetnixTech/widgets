@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dictionary Widget</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.widget {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 420px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 1rem;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #4285f4;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+button:hover {
+  background-color: #3367d6;
+}
+
+.result {
+  background-color: #f1f3f4;
+  padding: 15px;
+  border-radius: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.word {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.partOfSpeech {
+  font-style: italic;
+  color: #555;
+  margin-top: 10px;
+}
+
+.meaning, .example, .synonyms, .antonyms {
+  margin-top: 5px;
+  font-size: 1rem;
+}
+
+.audioBtn {
+  margin-left: 5px;
+  cursor: pointer;
+  color: #4285f4;
+  font-weight: bold;
+  font-size: 0.9rem;
+  border: none;
+  background: none;
+}
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <h2>Dictionary</h2>
+  <input type="text" id="wordInput" placeholder="Enter a word">
+  <button id="searchBtn">Search</button>
+  <div class="result" id="result">Type a word and click "Search"</div>
+</div>
+
+<script>
+const input = document.getElementById('wordInput');
+const button = document.getElementById('searchBtn');
+const resultDiv = document.getElementById('result');
+
+async function fetchDefinition(word) {
+  if(!word) return;
+  resultDiv.innerHTML = "Searching...";
+  
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+    const data = await res.json();
+    
+    if(data.title && data.title === "No Definitions Found") {
+      resultDiv.innerHTML = `No definition found for "${word}"`;
+      return;
+    }
+    
+    const entry = data[0];
+    let html = `<div class="word">${entry.word}`;
+
+    // Add audio if available
+    if(entry.phonetics && entry.phonetics[0] && entry.phonetics[0].audio) {
+      html += `<button class="audioBtn" onclick="new Audio('${entry.phonetics[0].audio}').play()">🔊 Play</button>`;
+    }
+    html += `</div>`;
+
+    entry.meanings.forEach(meaning => {
+      html += `<div class="partOfSpeech">${meaning.partOfSpeech}</div>`;
+      
+      meaning.definitions.forEach((def, index) => {
+        html += `<div class="meaning">${index + 1}. ${def.definition}</div>`;
+        if(def.example) html += `<div class="example">Example: ${def.example}</div>`;
+        if(def.synonyms && def.synonyms.length) html += `<div class="synonyms">Synonyms: ${def.synonyms.join(', ')}</div>`;
+        if(def.antonyms && def.antonyms.length) html += `<div class="antonyms">Antonyms: ${def.antonyms.join(', ')}</div>`;
+      });
+    });
+    
+    resultDiv.innerHTML = html;
+    
+  } catch(err) {
+    resultDiv.innerHTML = "Error fetching definition";
+    console.error(err);
+  }
+}
+
+button.addEventListener('click', () => {
+  const word = input.value.trim();
+  fetchDefinition(word);
+});
+
+input.addEventListener('keypress', e => {
+  if(e.key === 'Enter') fetchDefinition(input.value.trim());
+});
+</script>
+
+</body>
+</html>
