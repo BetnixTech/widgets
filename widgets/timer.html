@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timer / Stopwatch / Alarm</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 360px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #4285f4;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #3367d6;
+}
+
+.tab {
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+.display {
+  font-size: 2rem;
+  text-align: center;
+  margin: 15px 0;
+  background-color: #f1f3f4;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+input[type="number"], input[type="time"] {
+  width: 30%;
+  padding: 8px;
+  margin: 5px 2%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Timer / Stopwatch / Alarm</h2>
+  <div class="tab-buttons">
+    <button onclick="showTab('timer')">Timer</button>
+    <button onclick="showTab('stopwatch')">Stopwatch</button>
+    <button onclick="showTab('alarm')">Alarm</button>
+  </div>
+
+  <!-- Timer -->
+  <div id="timer" class="tab">
+    <div>
+      <input type="number" id="timerHours" placeholder="Hours" min="0">
+      <input type="number" id="timerMinutes" placeholder="Minutes" min="0">
+      <input type="number" id="timerSeconds" placeholder="Seconds" min="0">
+    </div>
+    <div class="display" id="timerDisplay">00:00:00</div>
+    <button id="startTimerBtn">Start</button>
+    <button id="stopTimerBtn">Stop</button>
+    <button id="resetTimerBtn">Reset</button>
+  </div>
+
+  <!-- Stopwatch -->
+  <div id="stopwatch" class="tab">
+    <div class="display" id="stopwatchDisplay">00:00:00</div>
+    <button id="startStopwatchBtn">Start</button>
+    <button id="stopStopwatchBtn">Stop</button>
+    <button id="resetStopwatchBtn">Reset</button>
+  </div>
+
+  <!-- Alarm -->
+  <div id="alarm" class="tab">
+    <input type="time" id="alarmTime">
+    <div class="display" id="alarmDisplay">No alarm set</div>
+    <button id="setAlarmBtn">Set Alarm</button>
+    <button id="stopAlarmBtn">Stop Alarm</button>
+    <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  </div>
+</div>
+
+<script>
+// Tab functionality
+function showTab(tabName) {
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+}
+showTab('timer'); // default tab
+
+// Timer
+let timerInterval;
+let timerRemaining = 0;
+
+document.getElementById('startTimerBtn').addEventListener('click', () => {
+  let hours = parseInt(document.getElementById('timerHours').value) || 0;
+  let minutes = parseInt(document.getElementById('timerMinutes').value) || 0;
+  let seconds = parseInt(document.getElementById('timerSeconds').value) || 0;
+  timerRemaining = hours * 3600 + minutes * 60 + seconds;
+
+  if(timerRemaining <= 0) return;
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      alert("Timer finished!");
+      document.getElementById('timerDisplay').textContent = "00:00:00";
+      return;
+    }
+    timerRemaining--;
+    let h = String(Math.floor(timerRemaining / 3600)).padStart(2,'0');
+    let m = String(Math.floor((timerRemaining % 3600)/60)).padStart(2,'0');
+    let s = String(timerRemaining % 60).padStart(2,'0');
+    document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+  }, 1000);
+});
+
+document.getElementById('stopTimerBtn').addEventListener('click', () => clearInterval(timerInterval));
+document.getElementById('resetTimerBtn').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  timerRemaining = 0;
+  document.getElementById('timerDisplay').textContent = "00:00:00";
+});
+
+// Stopwatch
+let stopwatchInterval;
+let stopwatchTime = 0;
+
+document.getElementById('startStopwatchBtn').addEventListener('click', () => {
+  clearInterval(stopwatchInterval);
+  stopwatchInterval = setInterval(() => {
+    stopwatchTime++;
+    let h = String(Math.floor(stopwatchTime / 3600)).padStart(2,'0');
+    let m = String(Math.floor((stopwatchTime % 3600)/60)).padStart(2,'0');
+    let s = String(stopwatchTime % 60).padStart(2,'0');
+    document.getElementById('stopwatchDisplay').textContent = `${h}:${m}:${s}`;
+  }, 1000);
+});
+
+document.getElementById('stopStopwatchBtn').addEventListener('click', () => clearInterval(stopwatchInterval));
+document.getElementById('resetStopwatchBtn').addEventListener('click', () => {
+  clearInterval(stopwatchInterval);
+  stopwatchTime = 0;
+  document.getElementById('stopwatchDisplay').textContent = "00:00:00";
+});
+
+// Alarm
+let alarmTimeout;
+
+document.getElementById('setAlarmBtn').addEventListener('click', () => {
+  const alarmInput = document.getElementById('alarmTime').value;
+  if(!alarmInput) return alert("Please select a time");
+
+  const now = new Date();
+  const [hours, minutes] = alarmInput.split(':').map(Number);
+  const alarmTime = new Date();
+  alarmTime.setHours(hours, minutes, 0, 0);
+
+  if(alarmTime < now) alarmTime.setDate(alarmTime.getDate() + 1);
+
+  const timeout = alarmTime - now;
+  clearTimeout(alarmTimeout);
+
+  alarmTimeout = setTimeout(() => {
+    document.getElementById('alarmSound').play();
+    alert("Alarm ringing!");
+  }, timeout);
+
+  document.getElementById('alarmDisplay').textContent = `Alarm set for ${alarmInput}`;
+});
+
+document.getElementById('stopAlarmBtn').addEventListener('click', () => {
+  clearTimeout(alarmTimeout);
+  document.getElementById('alarmSound').pause();
+  document.getElementById('alarmSound').currentTime = 0;
+  document.getElementById('alarmDisplay').textContent = "No alarm set";
+});
+</script>
+
+</body>
+</html>
