@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Dashboard</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.container {
+  width: 400px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.weather-card {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+}
+
+.weather-info {
+  margin-left: 15px;
+  flex: 1;
+}
+
+.city {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.temp {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.desc {
+  color: #555;
+}
+
+.details {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.icon {
+  width: 50px;
+  height: 50px;
+}
+
+.loader {
+  text-align: center;
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Weather Dashboard</h2>
+  <div id="loader" class="loader">Loading your location weather...</div>
+  <div id="weatherContainer"></div>
+</div>
+
+<script>
+const container = document.getElementById('weatherContainer');
+const loader = document.getElementById('loader');
+
+const defaultCities = ['New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Miami, FL'];
+
+// Weather code mapping to icons and description
+const weatherCodes = {
+  0:{icon:'☀️', desc:'Clear sky'},1:{icon:'🌤️', desc:'Mainly clear'},2:{icon:'⛅', desc:'Partly cloudy'},
+  3:{icon:'☁️', desc:'Overcast'},45:{icon:'🌫️', desc:'Fog'},48:{icon:'🌫️', desc:'Depositing rime fog'},
+  51:{icon:'🌦️', desc:'Drizzle: Light'},53:{icon:'🌦️', desc:'Drizzle: Moderate'},55:{icon:'🌧️', desc:'Drizzle: Dense'},
+  56:{icon:'🌧️', desc:'Freezing Drizzle: Light'},57:{icon:'🌧️', desc:'Freezing Drizzle: Dense'},61:{icon:'🌦️', desc:'Rain: Slight'},
+  63:{icon:'🌧️', desc:'Rain: Moderate'},65:{icon:'🌧️', desc:'Rain: Heavy'},66:{icon:'🌧️', desc:'Freezing Rain: Light'},
+  67:{icon:'🌧️', desc:'Freezing Rain: Heavy'},71:{icon:'🌨️', desc:'Snow fall: Slight'},73:{icon:'🌨️', desc:'Snow fall: Moderate'},
+  75:{icon:'🌨️', desc:'Snow fall: Heavy'},77:{icon:'❄️', desc:'Snow grains'},80:{icon:'🌦️', desc:'Rain showers: Slight'},
+  81:{icon:'🌧️', desc:'Rain showers: Moderate'},82:{icon:'🌧️', desc:'Rain showers: Violent'},85:{icon:'🌨️', desc:'Snow showers: Slight'},
+  86:{icon:'🌨️', desc:'Snow showers: Heavy'},95:{icon:'⛈️', desc:'Thunderstorm: Slight or moderate'},
+  96:{icon:'⛈️', desc:'Thunderstorm with slight hail'},99:{icon:'⛈️', desc:'Thunderstorm with heavy hail'}
+};
+
+function cToF(c){ return (c*9/5+32).toFixed(1); }
+
+async function getCoordinates(location){
+  try{
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.results && data.results.length > 0){
+      return {lat:data.results[0].latitude, lon:data.results[0].longitude, name:data.results[0].name, country:data.results[0].country};
+    } return null;
+  }catch(err){ console.error(err); return null; }
+}
+
+async function getWeather(lat, lon){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.current_weather;
+  }catch(err){ console.error(err); return null; }
+}
+
+function createCard(cityName, country, weather){
+  const code = weather.weathercode;
+  const icon = weatherCodes[code]? weatherCodes[code].icon:'❓';
+  const desc = weatherCodes[code]? weatherCodes[code].desc:'Unknown';
+
+  const card = document.createElement('div');
+  card.className = 'weather-card';
+  card.innerHTML = `
+    <div class="icon">${icon}</div>
+    <div class="weather-info">
+      <div class="city">${cityName}, ${country}</div>
+      <div class="temp">${weather.temperature}°C / ${cToF(weather.temperature)}°F</div>
+      <div class="desc">${desc}</div>
+      <div class="details">Wind: ${weather.windspeed} km/h, Dir: ${weather.winddirection}°</div>
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+// Load weather for your current location
+async function loadLocalWeather(){
+  if(!navigator.geolocation){
+    loader.textContent = "Geolocation not supported";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async position=>{
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    const weather = await getWeather(lat, lon);
+    loader.style.display = 'none';
+    createCard("Your Location", "", weather);
+    loadDefaultCities();
+  }, err=>{
+    loader.textContent = "Unable to get location";
+    loadDefaultCities();
+  });
+}
+
+// Load weather for default cities
+async function loadDefaultCities(){
+  for(const city of defaultCities){
+    const coords = await getCoordinates(city);
+    if(!coords) continue;
+    const weather = await getWeather(coords.lat, coords.lon);
+    createCard(coords.name, coords.country, weather);
+  }
+}
+
+loadLocalWeather();
+</script>
+
+</body>
+</html>
