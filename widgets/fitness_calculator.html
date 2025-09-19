@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Fitness Calculator</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.widget {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #4285f4;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+button:hover {
+  background-color: #3367d6;
+}
+
+.result {
+  background-color: #f1f3f4;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.result div {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <h2>Advanced Fitness Calculator</h2>
+  <input type="number" id="weight" placeholder="Weight (kg)">
+  <input type="number" id="height" placeholder="Height (cm)">
+  <input type="number" id="age" placeholder="Age">
+  <select id="gender">
+    <option value="">Select Gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+  </select>
+  <select id="activity">
+    <option value="">Select Activity Level</option>
+    <option value="1.2">Sedentary (little or no exercise)</option>
+    <option value="1.375">Lightly active (light exercise 1–3 days/week)</option>
+    <option value="1.55">Moderately active (moderate exercise 3–5 days/week)</option>
+    <option value="1.725">Very active (hard exercise 6–7 days/week)</option>
+    <option value="1.9">Extra active (very hard exercise, physical job)</option>
+  </select>
+  <button id="calculateBtn">Calculate</button>
+
+  <div class="result" id="result">Your results will appear here</div>
+</div>
+
+<script>
+const weightInput = document.getElementById('weight');
+const heightInput = document.getElementById('height');
+const ageInput = document.getElementById('age');
+const genderInput = document.getElementById('gender');
+const activityInput = document.getElementById('activity');
+const resultDiv = document.getElementById('result');
+const calculateBtn = document.getElementById('calculateBtn');
+
+function calculateFitness() {
+  const weight = parseFloat(weightInput.value);
+  const height = parseFloat(heightInput.value);
+  const age = parseInt(ageInput.value);
+  const gender = genderInput.value;
+  const activity = parseFloat(activityInput.value);
+
+  if(!weight || !height || !age || !gender || !activity){
+    resultDiv.innerHTML = "Please fill in all fields.";
+    return;
+  }
+
+  // BMI
+  const heightM = height / 100;
+  const bmi = (weight / (heightM * heightM)).toFixed(1);
+
+  let bmiCategory = '';
+  if(bmi < 18.5) bmiCategory = 'Underweight';
+  else if(bmi < 24.9) bmiCategory = 'Normal weight';
+  else if(bmi < 29.9) bmiCategory = 'Overweight';
+  else bmiCategory = 'Obese';
+
+  // Ideal weight range
+  const minWeight = (18.5 * heightM * heightM).toFixed(1);
+  const maxWeight = (24.9 * heightM * heightM).toFixed(1);
+
+  // BMR
+  let bmr;
+  if(gender === 'male'){
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  } else {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  }
+
+  // TDEE
+  const tdee = (bmr * activity).toFixed(0);
+
+  // Macronutrients (approximate)
+  const protein = (weight * 1.5).toFixed(0); // grams
+  const fat = ((tdee * 0.25) / 9).toFixed(0); // grams
+  const carbs = ((tdee - (protein*4 + fat*9))/4).toFixed(0); // grams
+
+  resultDiv.innerHTML = `
+    <div><strong>BMI:</strong> ${bmi} (${bmiCategory})</div>
+    <div><strong>Ideal Weight Range:</strong> ${minWeight}kg - ${maxWeight}kg</div>
+    <div><strong>BMR:</strong> ${bmr.toFixed(0)} kcal/day</div>
+    <div><strong>TDEE:</strong> ${tdee} kcal/day</div>
+    <div><strong>Macronutrients:</strong> Protein: ${protein}g, Fat: ${fat}g, Carbs: ${carbs}g</div>
+  `;
+}
+
+calculateBtn.addEventListener('click', calculateFitness);
+</script>
+
+</body>
+</html>
