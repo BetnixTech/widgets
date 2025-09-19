@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Scientific Calculator</title>
+<style>
+  body {
+    font-family: 'Google Sans', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f5f5f5;
+    padding: 20px;
+  }
+
+  .calculator {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 400px;
+    margin-bottom: 20px;
+  }
+
+  .display {
+    background-color: #f1f3f4;
+    border-radius: 12px;
+    padding: 15px;
+    font-size: 2rem;
+    text-align: right;
+    margin-bottom: 10px;
+    min-height: 50px;
+    overflow-x: auto;
+  }
+
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  button {
+    padding: 15px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  button:hover {
+    filter: brightness(0.9);
+  }
+
+  .btn-number { background-color: #e8eaed; color: #202124; }
+  .btn-operator { background-color: #fbbc04; color: #fff; }
+  .btn-function { background-color: #f1f3f4; color: #202124; }
+  .btn-equal { background-color: #1a73e8; color: #fff; grid-column: span 2; }
+
+  .history {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .history h3 {
+    margin-top: 0;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 10px;
+  }
+
+  .history div {
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    color: #5f6368;
+  }
+
+  .toggle-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+    align-items: center;
+    gap: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="display" id="display">0</div>
+
+  <div class="toggle-container">
+    <label for="degRad">Deg</label>
+    <input type="checkbox" id="degRad" title="Toggle Degrees/Radians">
+    <span id="modeLabel">Rad</span>
+  </div>
+
+  <div class="buttons">
+    <button class="btn-function" data-value="C">C</button>
+    <button class="btn-function" data-value="(">(</button>
+    <button class="btn-function" data-value=")">)</button>
+    <button class="btn-function" data-value="pi">π</button>
+    <button class="btn-function" data-value="e">e</button>
+    <button class="btn-operator" data-value="/">÷</button>
+
+    <button class="btn-number" data-value="7">7</button>
+    <button class="btn-number" data-value="8">8</button>
+    <button class="btn-number" data-value="9">9</button>
+    <button class="btn-operator" data-value="*">×</button>
+    <button class="btn-function" data-value="^">^</button>
+    <button class="btn-function" data-value="sqrt">√</button>
+
+    <button class="btn-number" data-value="4">4</button>
+    <button class="btn-number" data-value="5">5</button>
+    <button class="btn-number" data-value="6">6</button>
+    <button class="btn-operator" data-value="-">−</button>
+    <button class="btn-function" data-value="!">!</button>
+    <button class="btn-function" data-value="%">%</button>
+
+    <button class="btn-number" data-value="1">1</button>
+    <button class="btn-number" data-value="2">2</button>
+    <button class="btn-number" data-value="3">3</button>
+    <button class="btn-operator" data-value="+">+</button>
+    <button class="btn-function" data-value="sin">sin</button>
+    <button class="btn-function" data-value="cos">cos</button>
+
+    <button class="btn-number" data-value="0" style="grid-column: span 2;">0</button>
+    <button class="btn-number" data-value=".">.</button>
+    <button class="btn-equal" data-value="=">=</button>
+    <button class="btn-function" data-value="tan">tan</button>
+    <button class="btn-function" data-value="log">log</button>
+    <button class="btn-function" data-value="ln">ln</button>
+
+    <button class="btn-function" data-value="asin">asin</button>
+    <button class="btn-function" data-value="acos">acos</button>
+    <button class="btn-function" data-value="atan">atan</button>
+  </div>
+</div>
+
+<div class="history" id="history">
+  <h3>History</h3>
+</div>
+
+<script>
+const display = document.getElementById('display');
+const historyDiv = document.getElementById('history');
+let expression = '';
+let degreeMode = false;
+
+const degRadToggle = document.getElementById('degRad');
+const modeLabel = document.getElementById('modeLabel');
+
+degRadToggle.addEventListener('change', ()=>{
+  degreeMode = degRadToggle.checked;
+  modeLabel.textContent = degreeMode ? 'Deg' : 'Rad';
+});
+
+function updateDisplay() {
+  display.textContent = expression || '0';
+}
+
+function factorial(n){
+  if(n<0) return NaN;
+  if(n===0||n===1) return 1;
+  let res=1;
+  for(let i=2;i<=n;i++) res*=i;
+  return res;
+}
+
+function calculate(expr){
+  try{
+    let modified = expr
+      .replace(/÷/g,'/')
+      .replace(/×/g,'*')
+      .replace(/π/g,'Math.PI')
+      .replace(/pi/g,'Math.PI')
+      .replace(/e/g,'Math.E')
+      .replace(/√/g,'Math.sqrt')
+      .replace(/sin/g, degreeMode ? 'degSin' : 'Math.sin')
+      .replace(/cos/g, degreeMode ? 'degCos' : 'Math.cos')
+      .replace(/tan/g, degreeMode ? 'degTan' : 'Math.tan')
+      .replace(/asin/g, degreeMode ? 'degAsin' : 'Math.asin')
+      .replace(/acos/g, degreeMode ? 'degAcos' : 'Math.acos')
+      .replace(/atan/g, degreeMode ? 'degAtan' : 'Math.atan')
+      .replace(/log/g,'Math.log10')
+      .replace(/ln/g,'Math.log')
+      .replace(/\^/g,'**')
+      .replace(/(\d+)!/g,'factorial($1)')
+      .replace(/%/g,'/100');
+      
+    // degree functions
+    function degSin(x){return Math.sin(x*Math.PI/180);}
+    function degCos(x){return Math.cos(x*Math.PI/180);}
+    function degTan(x){return Math.tan(x*Math.PI/180);}
+    function degAsin(x){return Math.asin(x)*180/Math.PI;}
+    function degAcos(x){return Math.acos(x)*180/Math.PI;}
+    function degAtan(x){return Math.atan(x)*180/Math.PI;}
+
+    return Function('factorial,degSin,degCos,degTan,degAsin,degAcos,degAtan','"use strict"; return ('+modified+')')
+      (factorial,degSin,degCos,degTan,degAsin,degAcos,degAtan);
+
+  }catch(err){
+    return 'Invalid Syntax';
+  }
+}
+
+document.querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const val = btn.dataset.value;
+    if(val==='C'){ expression=''; }
+    else if(val==='='){
+      const result = calculate(expression);
+      historyDiv.innerHTML += `<div>${expression} = ${result}</div>`;
+      expression = result.toString();
+    } else if(val==='sqrt'){ expression+='√('; }
+    else { expression+=val; }
+    updateDisplay();
+  });
+});
+
+updateDisplay();
+</script>
+
+</body>
+</html>
