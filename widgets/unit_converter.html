@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Google-Style Unit Converter</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark-mode {
+  background-color: #202124;
+  color: #e8eaed;
+}
+
+.converter {
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 20px;
+  width: 400px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark-mode .converter {
+  background-color: #303134;
+  color: #e8eaed;
+}
+
+h2 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+select, input, button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark-mode select, 
+.dark-mode input, 
+.dark-mode button {
+  background-color: #5f6368;
+  color: #e8eaed;
+  border: 1px solid #8a8a8a;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(0.9);
+}
+
+.output-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.output {
+  flex: 1;
+  text-align: center;
+  font-size: 1.5rem;
+  margin-top: 10px;
+  background-color: #f1f3f4;
+  padding: 15px;
+  border-radius: 12px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark-mode .output {
+  background-color: #5f6368;
+  color: #e8eaed;
+}
+
+.toggle-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  gap: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="converter">
+  <h2>Unit Converter</h2>
+
+  <label for="category">Category:</label>
+  <select id="category"></select>
+
+  <div class="toggle-container">
+    <div style="flex:1;">
+      <label for="fromUnit">From:</label>
+      <select id="fromUnit"></select>
+    </div>
+    <div style="flex:1;">
+      <label for="toUnit">To:</label>
+      <select id="toUnit"></select>
+    </div>
+  </div>
+
+  <button id="swapBtn">Swap Units</button>
+
+  <label for="value">Value:</label>
+  <input type="number" id="value" placeholder="Enter value">
+
+  <div class="output-container">
+    <div class="output" id="result">0</div>
+    <button id="copyBtn">Copy</button>
+  </div>
+
+  <button id="darkModeBtn">Toggle Dark Mode</button>
+</div>
+
+<script>
+const categorySelect = document.getElementById('category');
+const fromUnitSelect = document.getElementById('fromUnit');
+const toUnitSelect = document.getElementById('toUnit');
+const valueInput = document.getElementById('value');
+const resultDiv = document.getElementById('result');
+const swapBtn = document.getElementById('swapBtn');
+const copyBtn = document.getElementById('copyBtn');
+const darkModeBtn = document.getElementById('darkModeBtn');
+const body = document.body;
+
+const units = {
+  length: { meter:1, kilometer:0.001, mile:0.000621371, yard:1.09361, foot:3.28084, inch:39.3701, centimeter:100, millimeter:1000 },
+  weight: { gram:1, kilogram:0.001, pound:0.00220462, ounce:0.035274, ton:0.000001 },
+  volume: { liter:1, milliliter:1000, gallon:0.264172, pint:2.11338, cup:4.22675, 'fl oz':33.814 },
+  temperature: { celsius:'c', fahrenheit:'f', kelvin:'k' },
+  speed: { 'm/s':1, 'km/h':3.6, 'mph':2.23694, knots:1.94384 },
+  area: { 'm²':1, 'km²':0.000001, 'ft²':10.7639, acre:0.000247105, hectare:0.0001 },
+  data: { bit:1, byte:0.125, kilobyte:0.00012207, megabyte:1.19209e-7, gigabyte:1.16415e-10, terabyte:1.13687e-13 },
+  energy: { joule:1, calorie:0.239006, kcal:0.000239006, kWh:2.77778e-7 },
+  pressure: { Pa:1, kPa:0.001, atm:9.86923e-6, bar:0.00001, psi:0.000145038 },
+  time: { second:1, minute:1/60, hour:1/3600, day:1/86400 },
+  frequency: { hertz:1, kilohertz:0.001, megahertz:1e-6, gigahertz:1e-9 },
+  angle: { degree:1, radian:0.0174533, grad:1.11111 }
+};
+
+function populateCategories() {
+  categorySelect.innerHTML = '';
+  for (let cat in units) {
+    categorySelect.add(new Option(cat.charAt(0).toUpperCase()+cat.slice(1), cat));
+  }
+}
+
+function populateUnits() {
+  const category = categorySelect.value;
+  const unitList = units[category];
+  fromUnitSelect.innerHTML = '';
+  toUnitSelect.innerHTML = '';
+  for (let key in unitList) {
+    fromUnitSelect.add(new Option(key, key));
+    toUnitSelect.add(new Option(key, key));
+  }
+}
+
+function convert() {
+  const category = categorySelect.value;
+  const fromUnit = fromUnitSelect.value;
+  const toUnit = toUnitSelect.value;
+  let value = parseFloat(valueInput.value);
+  if (isNaN(value)) { resultDiv.textContent = '0'; return; }
+
+  if(category==='temperature') {
+    let celsius;
+    if(fromUnit==='celsius') celsius=value;
+    else if(fromUnit==='fahrenheit') celsius=(value-32)*5/9;
+    else celsius=value-273.15;
+
+    if(toUnit==='celsius') resultDiv.textContent=celsius.toFixed(2);
+    else if(toUnit==='fahrenheit') resultDiv.textContent=(celsius*9/5+32).toFixed(2);
+    else resultDiv.textContent=(celsius+273.15).toFixed(2);
+
+  } else {
+    const fromFactor = units[category][fromUnit];
+    const toFactor = units[category][toUnit];
+    const result = (value / fromFactor) * toFactor;
+    resultDiv.textContent = result.toFixed(6);
+  }
+}
+
+categorySelect.addEventListener('change', ()=>{
+  populateUnits();
+  convert();
+});
+fromUnitSelect.addEventListener('change', convert);
+toUnitSelect.addEventListener('change', convert);
+valueInput.addEventListener('input', convert);
+
+swapBtn.addEventListener('click', ()=>{
+  const temp = fromUnitSelect.value;
+  fromUnitSelect.value = toUnitSelect.value;
+  toUnitSelect.value = temp;
+  convert();
+});
+
+copyBtn.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(resultDiv.textContent);
+  alert('Copied: '+resultDiv.textContent);
+});
+
+darkModeBtn.addEventListener('click', ()=>{
+  body.classList.toggle('dark-mode');
+});
+
+populateCategories();
+populateUnits();
+</script>
+
+</body>
+</html>
