@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock - All Timezones</title>
+<style>
+body {
+  font-family: 'Google Sans', Arial, sans-serif;
+  background-color: #f5f5f5;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 600px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.clock-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.city {
+  font-weight: bold;
+}
+
+.time {
+  font-family: monospace;
+  color: #4285f4;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>World Clock - All Timezones</h2>
+  <div id="clockContainer"></div>
+</div>
+
+<script>
+// List of all IANA timezones
+const timezones = Intl.supportedValuesOf("timeZone"); // modern browsers
+// fallback for older browsers, you can hardcode an array of common zones if needed
+
+const container = document.getElementById('clockContainer');
+
+// Create a card for each timezone
+timezones.forEach(tz => {
+  const card = document.createElement('div');
+  card.className = 'clock-card';
+  card.innerHTML = `
+    <div class="city">${tz}</div>
+    <div class="time" id="${tz.replace(/\//g,'_')}">--:--:--</div>
+  `;
+  container.appendChild(card);
+});
+
+// Update all clocks
+function updateClocks() {
+  const now = new Date();
+  timezones.forEach(tz => {
+    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: tz };
+    const timeString = new Intl.DateTimeFormat([], options).format(now);
+    const id = tz.replace(/\//g,'_');
+    const el = document.getElementById(id);
+    if(el) el.textContent = timeString;
+  });
+}
+
+updateClocks();
+setInterval(updateClocks, 1000);
+</script>
+
+</body>
+</html>
